@@ -2,10 +2,10 @@ name: Build the CI job for nodejs application
 on:
   push:
     branches:
-      - ci-branch
+      - CICD
   pull_request:
     branches:
-      - main
+      - CICD
 
 
 jobs: 
