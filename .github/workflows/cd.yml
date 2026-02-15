@@ -12,38 +12,29 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Checkout repository (optional but recommended)
+      - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Update system packages
-        run: sudo apt update -y
-
-      - name: Install Node.js and npm
-        run: sudo apt install nodejs npm -y
-
-      - name: List files before artifact download
-        run: ls -la
 
       - name: Download artifacts from CI workflow
         uses: actions/download-artifact@v4
         with:
           name: nodejs-app-artifacts
-          path: ./nodejs-app-artifacts
+          path: ./app
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Move to artifact directory
-        run: cd nodejs-app-artifacts
+      - name: Install production dependencies
+        working-directory: ./app
+        run: npm ci --production
 
-      - name: Install dependencies
+      - name: Stop existing application (if running)
         run: |
-          cd nodejs-app-artifacts
-          npm install
+          pkill -f "node src/index.js" || true
 
       - name: Start Node.js Application
+        working-directory: ./app
         run: |
-          cd nodejs-app-artifacts
           nohup node src/index.js > app.log 2>&1 &
-
+      
       - name: Deployment completed
         run: echo "Deployment completed successfully"
