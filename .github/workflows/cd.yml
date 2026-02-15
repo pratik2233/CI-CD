@@ -1,43 +1,51 @@
-name: Build the CI job for nodejs application
+name: CD - Deploy NodeJS App to EC2 (ap-south-1)
 
 on:
-  push:
-    branches:
-      - CICD
-  pull_request:
-    branches:
-      - CICD
+  workflow_run:
+    workflows: ["Build the CI job for nodejs application"]
+    types:
+      - completed
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    environment: QA
+  deploy:
+    name: Deploy to EC2 Self-Hosted Runner
+    runs-on: self-hosted
 
     steps:
-      - name: Checkout code
+
+      # 1️⃣ Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '14'
+      # 2️⃣ Update system packages
+      - name: Update system packages
+        run: sudo apt update -y
 
-      - name: Install dependencies
-        run: npm install
+      # 3️⃣ Install Node.js & npm (if not installed)
+      - name: Install Node.js and npm
+        run: sudo apt install -y nodejs npm
 
-      - name: Run tests
-        run: npm test
-
-      - name: List all files and folders
-        run: ls -la
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      # 4️⃣ Download artifact from CI workflow
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
         with:
           name: nodejs-app-artifacts
-          path: ./
+          path: ./nodejs-app
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get username and password from GitHub
+      # 5️⃣ Install dependencies
+      - name: Install project dependencies
         run: |
-          echo "Username: ${{ vars.USER_NAME }}"
-          echo "Password: ${{ secrets.PASSWORD }}"
+          cd nodejs-app
+          npm install
+
+      # 6️⃣ Start Node.js application
+      - name: Start NodeJS application
+        run: |
+          cd nodejs-app
+          nohup npm start > app.log 2>&1 &
+
+      # 7️⃣ Confirmation message
+      - name: Deployment completed
+        run: echo "Deployment completed successfully 🚀"
