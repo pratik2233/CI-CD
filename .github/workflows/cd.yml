@@ -1,0 +1,49 @@
+name: CD - Deploy NodeJS App to EC2
+
+on:
+  workflow_run:
+    workflows: ["Build the CI job for nodejs application"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    name: Deploy NodeJS Application to EC2 (Self-Hosted Runner - ap-south-1)
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository (optional but recommended)
+        uses: actions/checkout@v4
+
+      - name: Update system packages
+        run: sudo apt update -y
+
+      - name: Install Node.js and npm
+        run: sudo apt install nodejs npm -y
+
+      - name: List files before artifact download
+        run: ls -la
+
+      - name: Download artifacts from CI workflow
+        uses: actions/download-artifact@v4
+        with:
+          name: nodejs-app-artifacts
+          path: ./nodejs-app-artifacts
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Move to artifact directory
+        run: cd nodejs-app-artifacts
+
+      - name: Install dependencies
+        run: |
+          cd nodejs-app-artifacts
+          npm install
+
+      - name: Start Node.js Application
+        run: |
+          cd nodejs-app-artifacts
+          nohup node src/index.js > app.log 2>&1 &
+
+      - name: Deployment completed
+        run: echo "Deployment completed successfully"
