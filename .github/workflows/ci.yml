@@ -1,4 +1,5 @@
 name: Build the CI job for nodejs application
+
 on:
   push:
     branches:
@@ -7,40 +8,36 @@ on:
     branches:
       - CICD
 
-
-jobs: 
+jobs:
   build:
     runs-on: ubuntu-latest
     environment: QA
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
- #     - name: Set up Node.js
- #       uses: actions/setup-node@v2
-  #      with:
-   #       node-version: '14'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '14'
 
-      # - name: Install dependencies
-      #   run: npm install
+      - name: Install dependencies
+        run: npm install
 
-      # - name: Run tests
-      #   run: npm test
+      - name: Run tests
+        run: npm test
 
-      # - name: list all the files and folder in build directory
-      #   run: ls 
+      - name: List all files and folders
+        run: ls -la
 
-      # - name: Upload artifacts check the node js application path 
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: nodejs-app-=artifacts
-      #     path: ./
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nodejs-app-artifacts
+          path: ./
 
-      
-
-
-      - name: get the user_name and password from github
-        #run: echo "Username: ${{ vari.USERNAME }} and Password: ${{ secrets.PASSWORD }}"
+      - name: Get username and password from GitHub
         run: |
           echo "Username: ${{ vars.USER_NAME }}"
           echo "Password: ${{ secrets.PASSWORD }}"
