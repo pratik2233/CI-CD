@@ -1,40 +1,43 @@
-name: CD - Deploy NodeJS App to EC2
+name: Build the CI job for nodejs application
 
 on:
-  workflow_run:
-    workflows: ["Build the CI job for nodejs application"]
-    types:
-      - completed
+  push:
+    branches:
+      - CICD
+  pull_request:
+    branches:
+      - CICD
 
 jobs:
-  deploy:
-    name: Deploy NodeJS Application to EC2 (Self-Hosted Runner - ap-south-1)
-    runs-on: self-hosted
+  build:
+    runs-on: ubuntu-latest
+    environment: QA
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download artifacts from CI workflow
-        uses: actions/download-artifact@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+      - name: List all files and folders
+        run: ls -la
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: nodejs-app-artifacts
-          path: ./app
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ./
 
-      - name: Install production dependencies
-        working-directory: ./app
-        run: npm ci --production
-
-      - name: Stop existing application (if running)
+      - name: Get username and password from GitHub
         run: |
-          pkill -f "node src/index.js" || true
-
-      - name: Start Node.js Application
-        working-directory: ./app
-        run: |
-          nohup node src/index.js > app.log 2>&1 &
-      
-      - name: Deployment completed
-        run: echo "Deployment completed successfully"
+          echo "Username: ${{ vars.USER_NAME }}"
+          echo "Password: ${{ secrets.PASSWORD }}"
